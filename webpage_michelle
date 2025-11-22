@@ -19,8 +19,11 @@
         @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
         .animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
         
-        @keyframes pop-in { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-pop-in { animation: pop-in 0.2s ease-out forwards; }
+
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.2s ease-out; }
 
         body { background-color: #f9fafb; overflow-x: hidden; }
         
@@ -35,7 +38,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useMemo, useEffect, useRef } = React;
 
         // --- ICONS ---
         const IconBase = ({ children, className, onClick }) => (
@@ -49,19 +52,14 @@
         const Send = (p) => <IconBase {...p}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconBase>;
         const Check = (p) => <IconBase {...p}><polyline points="20 6 9 17 4 12"/></IconBase>;
         const X = (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></IconBase>;
-        const Star = (p) => <IconBase {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></IconBase>;
         const Volume2 = (p) => <IconBase {...p}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></IconBase>;
         const User = (p) => <IconBase {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconBase>;
         const Settings = (p) => <IconBase {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const LogOut = (p) => <IconBase {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconBase>;
+        const Edit = (p) => <IconBase {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
+        const Camera = (p) => <IconBase {...p}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></IconBase>;
 
         // --- MOCK DATA ---
-        const CURRENT_USER = {
-            name: "Jason D.",
-            major: "Computer Science",
-            avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&q=80"
-        };
-
         const LOCATIONS = [
           {
             id: 1,
@@ -69,9 +67,10 @@
             distance: 'On Campus',
             wifiStars: 5,
             outletCount: 'Many',
-            noiseLevel: 1, // 1=Silent, 5=Loud
-            closingIn: 8, // hours from now
-            fullness: 40, // percentage
+            noiseLevel: 1,
+            closingIn: 8,
+            hours: "7:30 AM - 9:00 PM",
+            fullness: 40,
             image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
             address: 'Kirsch Center for Environmental Studies',
           },
@@ -83,6 +82,7 @@
             outletCount: 'Limited',
             noiseLevel: 2,
             closingIn: 3,
+            hours: "8:00 AM - 6:00 PM",
             fullness: 85,
             image: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
             address: 'De Anza Library',
@@ -90,11 +90,12 @@
           {
             id: 3,
             name: 'Philz Coffee (Stevens Creek)',
-            distance: '0.8 miles from De Anza',
+            distance: '0.8 miles',
             wifiStars: 3,
             outletCount: 'Moderate',
             noiseLevel: 4,
             closingIn: 6,
+            hours: "6:00 AM - 8:00 PM",
             fullness: 60,
             image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
             address: '21267 Stevens Creek Blvd',
@@ -102,32 +103,21 @@
           {
             id: 4,
             name: 'Whole Foods Seating Area',
-            distance: '1.2 miles from De Anza',
+            distance: '1.2 miles',
             wifiStars: 4,
             outletCount: 'Few',
             noiseLevel: 3,
             closingIn: 1,
+            hours: "8:00 AM - 10:00 PM",
             fullness: 20,
             image: 'https://images.unsplash.com/photo-1584434815596-d03b616f2d1a?auto=format&fit=crop&w=800&q=80',
             address: 'Stevens Creek & De Anza Blvd',
           },
-          {
-            id: 5,
-            name: 'Closed Place Example',
-            distance: '0.5 miles',
-            wifiStars: 2,
-            outletCount: 'None',
-            noiseLevel: 5,
-            closingIn: 0, // 0 = Closed
-            fullness: 0,
-            image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
-            address: 'Closed Store',
-          }
         ];
 
         // --- COMPONENTS ---
 
-        // 1. Top Right Notification Popup
+        // 1. Notification Toast
         const NotificationPopup = ({ invite, onAccept, onReject }) => {
             if (!invite) return null;
             return (
@@ -137,23 +127,17 @@
                             <User className="w-5 h-5" />
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-sm font-bold text-gray-900">Study Invite!</h4>
+                            <h4 className="text-sm font-bold text-gray-900">New Invite!</h4>
                             <p className="text-xs text-gray-600 mt-1">
-                                <span className="font-bold">{invite.name}</span> wants to study at <span className="font-medium">{invite.location}</span>.
+                                <span className="font-bold">{invite.name}</span> invited you to <span className="font-medium">{invite.location}</span>.
                             </p>
                             <p className="text-xs text-gray-500 mt-1">{invite.time}</p>
                             
                             <div className="flex items-center gap-2 mt-3">
-                                <button 
-                                    onClick={onReject}
-                                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
-                                >
+                                <button onClick={onReject} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors text-sm">
                                     <X className="w-4 h-4" /> Reject
                                 </button>
-                                <button 
-                                    onClick={onAccept}
-                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors font-medium shadow-sm"
-                                >
+                                <button onClick={onAccept} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors font-medium shadow-sm text-sm">
                                     Accept <Check className="w-4 h-4" />
                                 </button>
                             </div>
@@ -163,54 +147,198 @@
             );
         };
 
-        // 2. Profile Drawer (1/3 Width)
-        const ProfileDrawer = ({ isOpen, onClose }) => {
+        // 2. Invite Modal (To send invites)
+        const InviteModal = ({ isOpen, onClose, location }) => {
+            const [sent, setSent] = useState(false);
+
+            if (!isOpen || !location) return null;
+
+            const handleSend = () => {
+                setSent(true);
+                setTimeout(() => {
+                    setSent(false);
+                    onClose();
+                }, 1500);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-pop-in m-4">
+                        {!sent ? (
+                            <>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-gray-900">Invite Friends</h3>
+                                    <button onClick={onClose}><X className="w-6 h-6 text-gray-400 hover:text-gray-600"/></button>
+                                </div>
+                                
+                                <div className="bg-amber-50 p-4 rounded-xl mb-6 flex items-center gap-4 border border-amber-100">
+                                    <img src={location.image} className="w-16 h-16 rounded-lg object-cover"/>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">{location.name}</h4>
+                                        <p className="text-xs text-gray-600">{location.hours}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">When?</label>
+                                        <input type="datetime-local" className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Who?</label>
+                                        <div className="flex gap-2 overflow-x-auto pb-2">
+                                            {['Alex', 'Sarah', 'Mike', 'Emma'].map((name, i) => (
+                                                <button key={i} className="flex flex-col items-center min-w-[60px] gap-1 p-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs bg-gradient-to-br ${i%2===0 ? 'from-blue-400 to-blue-600' : 'from-purple-400 to-purple-600'}`}>
+                                                        {name[0]}
+                                                    </div>
+                                                    <span className="text-xs">{name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button onClick={handleSend} className="w-full bg-amber-600 text-white font-bold py-3 rounded-xl hover:bg-amber-700 transition-colors flex items-center justify-center gap-2">
+                                    <Send className="w-5 h-5" /> Send Invitations
+                                </button>
+                            </>
+                        ) : (
+                            <div className="text-center py-8">
+                                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Check className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900">Invites Sent!</h3>
+                                <p className="text-gray-500 mt-2">Your friends have been notified.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 3. Profile Drawer
+        const ProfileDrawer = ({ isOpen, onClose, user, onUpdateUser }) => {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editForm, setEditForm] = useState({...user});
+            const fileInputRef = useRef(null);
+
+            useEffect(() => {
+                setEditForm({...user});
+            }, [user]);
+
+            const handleSave = () => {
+                onUpdateUser(editForm);
+                setIsEditing(false);
+            };
+
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const imageUrl = URL.createObjectURL(file);
+                    setEditForm(prev => ({...prev, avatar: imageUrl}));
+                }
+            };
+
             if (!isOpen) return null;
+
             return (
                 <>
-                    <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="fixed inset-0 bg-black/30 z-40 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
                     <div className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-white z-50 shadow-2xl animate-slide-in-right flex flex-col">
+                        {/* Header */}
                         <div className="p-6 bg-amber-600 text-white">
                             <div className="flex justify-between items-start">
-                                <h2 className="text-2xl font-bold">Profile</h2>
+                                <h2 className="text-2xl font-bold">My Profile</h2>
                                 <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-6 h-6"/></button>
                             </div>
-                            <div className="mt-6 flex items-center gap-4">
-                                <img src={CURRENT_USER.avatar} className="w-16 h-16 rounded-full border-2 border-white" />
-                                <div>
-                                    <div className="font-bold text-lg">{CURRENT_USER.name}</div>
-                                    <div className="text-amber-100 text-sm">{CURRENT_USER.major}</div>
+                            
+                            <div className="mt-8 flex flex-col items-center">
+                                <div className="relative group">
+                                    <img src={editForm.avatar} className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover bg-gray-200" />
+                                    {isEditing && (
+                                        <button 
+                                            onClick={() => fileInputRef.current.click()}
+                                            className="absolute bottom-0 right-0 bg-gray-900 text-white p-2 rounded-full hover:bg-gray-700 transition-colors shadow-lg"
+                                        >
+                                            <Camera className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                                 </div>
+                                
+                                {isEditing ? (
+                                    <div className="mt-4 w-full space-y-3">
+                                        <input 
+                                            type="text" 
+                                            value={editForm.name} 
+                                            onChange={e => setEditForm({...editForm, name: e.target.value})}
+                                            className="w-full text-gray-900 px-3 py-2 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-white/50"
+                                            placeholder="Your Name"
+                                        />
+                                        <input 
+                                            type="text" 
+                                            value={editForm.major} 
+                                            onChange={e => setEditForm({...editForm, major: e.target.value})}
+                                            className="w-full text-gray-900 px-3 py-2 rounded-lg text-center text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                                            placeholder="Your Major"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 text-center">
+                                        <div className="font-bold text-xl">{user.name}</div>
+                                        <div className="text-amber-100">{user.major}</div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         
-                        <div className="p-6 flex-1 overflow-y-auto">
-                            <div className="space-y-2">
-                                <button className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 text-left">
-                                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><User className="w-5 h-5" /></div>
-                                    <div>
-                                        <div className="font-bold text-gray-900">Edit Profile</div>
-                                        <div className="text-xs text-gray-500">Change major, name, photo</div>
+                        {/* Actions */}
+                        <div className="p-6 flex-1 overflow-y-auto bg-gray-50">
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                {!isEditing ? (
+                                    <button 
+                                        onClick={() => setIsEditing(true)}
+                                        className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 text-left"
+                                    >
+                                        <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Edit className="w-5 h-5" /></div>
+                                        <div>
+                                            <div className="font-bold text-gray-900">Edit Profile</div>
+                                            <div className="text-xs text-gray-500">Update your details & photo</div>
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={handleSave}
+                                        className="w-full flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 transition-colors border-b border-green-200 text-left"
+                                    >
+                                        <div className="bg-green-200 p-2 rounded-lg text-green-700"><Check className="w-5 h-5" /></div>
+                                        <div>
+                                            <div className="font-bold text-green-800">Save Changes</div>
+                                            <div className="text-xs text-green-600">Update your public profile</div>
+                                        </div>
+                                    </button>
+                                )}
+                                
+                                <div className="p-4 border-b border-gray-100 flex items-center gap-3 text-gray-400">
+                                    <div className="bg-gray-100 p-2 rounded-lg"><Clock className="w-5 h-5" /></div>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-gray-400">Study History</div>
+                                        <div className="text-xs">No recent sessions</div>
                                     </div>
-                                </button>
-                                <button className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 text-left">
-                                    <div className="bg-purple-100 p-2 rounded-lg text-purple-600"><Clock className="w-5 h-5" /></div>
-                                    <div>
-                                        <div className="font-bold text-gray-900">Study History</div>
-                                        <div className="text-xs text-gray-500">View past sessions</div>
+                                </div>
+                                
+                                <div className="p-4 flex items-center gap-3 text-gray-400">
+                                    <div className="bg-gray-100 p-2 rounded-lg"><Settings className="w-5 h-5" /></div>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-gray-400">Settings</div>
+                                        <div className="text-xs">Notifications, Privacy</div>
                                     </div>
-                                </button>
-                                <button className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 text-left">
-                                    <div className="bg-gray-100 p-2 rounded-lg text-gray-600"><Settings className="w-5 h-5" /></div>
-                                    <div>
-                                        <div className="font-bold text-gray-900">Settings</div>
-                                        <div className="text-xs text-gray-500">Notifications, Privacy</div>
-                                    </div>
-                                </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-100">
+                        <div className="p-6 border-t border-gray-200 bg-white">
                             <button className="w-full flex items-center justify-center gap-2 text-red-600 font-medium py-3 hover:bg-red-50 rounded-xl transition-colors">
                                 <LogOut className="w-5 h-5" /> Sign Out
                             </button>
@@ -220,160 +348,124 @@
             );
         };
 
-        // 3. Main App
+        // 4. Main App
         function App() {
             const [view, setView] = useState('explore');
             const [showProfile, setShowProfile] = useState(false);
             const [activeInvite, setActiveInvite] = useState(null);
             
-            // Filters State
-            const [filters, setFilters] = useState({
-                wifi: false, // 4+ stars
-                outlets: false, // Many/Moderate
-                quiet: false, // Level 1-2
-                longSession: false // 5+ hours
+            // Invite Modal State
+            const [showInviteModal, setShowInviteModal] = useState(false);
+            const [selectedLocationForInvite, setSelectedLocationForInvite] = useState(null);
+            
+            // User State
+            const [userProfile, setUserProfile] = useState({
+                name: "Jason D.",
+                major: "Computer Science",
+                avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=200&q=80"
             });
 
-            // Simulate an incoming invite after 2 seconds
+            const [filters, setFilters] = useState({
+                wifi: false, outlets: false, quiet: false, longSession: false
+            });
+
+            // Fake Invite Notification after 2s
             useEffect(() => {
                 const timer = setTimeout(() => {
                     setActiveInvite({
-                        id: 99,
-                        name: "Sarah J.",
-                        location: "Kirsch Center",
-                        time: "Today, 2:00 PM"
+                        id: 99, name: "Sarah J.", location: "Kirsch Center", time: "Today, 2:00 PM"
                     });
                 }, 2000);
                 return () => clearTimeout(timer);
             }, []);
 
-            // Logic to filter locations
             const visibleLocations = useMemo(() => {
                 return LOCATIONS.filter(loc => {
-                    // 1. Basic Rule: Must be open (closingIn > 0)
                     if (loc.closingIn <= 0) return false;
-
-                    // 2. Apply User Filters
                     if (filters.wifi && loc.wifiStars < 4) return false;
                     if (filters.outlets && loc.outletCount === 'None') return false;
                     if (filters.outlets && loc.outletCount === 'Few') return false;
                     if (filters.quiet && loc.noiseLevel > 2) return false;
                     if (filters.longSession && loc.closingIn < 5) return false;
-
                     return true;
                 });
             }, [filters]);
 
-            const handleAcceptInvite = () => {
-                alert("Invite Accepted! Added to your schedule.");
-                setActiveInvite(null);
-                setView('invitations'); // Go to invites page
+            const openInviteModal = (loc) => {
+                setSelectedLocationForInvite(loc);
+                setShowInviteModal(true);
             };
 
             return (
                 <div className="min-h-screen flex flex-col relative">
-                    {/* Popup Notification */}
-                    <NotificationPopup 
-                        invite={activeInvite} 
-                        onAccept={handleAcceptInvite} 
-                        onReject={() => setActiveInvite(null)} 
+                    <NotificationPopup invite={activeInvite} onAccept={() => {setActiveInvite(null); setView('invitations');}} onReject={() => setActiveInvite(null)} />
+                    
+                    <ProfileDrawer 
+                        isOpen={showProfile} 
+                        onClose={() => setShowProfile(false)} 
+                        user={userProfile}
+                        onUpdateUser={setUserProfile}
                     />
 
-                    {/* Profile Modal */}
-                    <ProfileDrawer isOpen={showProfile} onClose={() => setShowProfile(false)} />
+                    <InviteModal 
+                        isOpen={showInviteModal} 
+                        onClose={() => setShowInviteModal(false)} 
+                        location={selectedLocationForInvite}
+                    />
 
-                    {/* Navigation */}
-                    <nav className="bg-white border-b border-gray-200 sticky top-0 z-30 px-4 md:px-8 h-16 flex items-center justify-between">
+                    <nav className="bg-white border-b border-gray-200 sticky top-0 z-30 px-4 md:px-8 h-16 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('explore')}>
-                            <div className="bg-amber-600 p-2 rounded-lg text-white"><MapPin className="w-5 h-5" /></div>
+                            <div className="bg-amber-600 p-2 rounded-lg text-white shadow-amber-200 shadow-md"><MapPin className="w-5 h-5" /></div>
                             <span className="text-xl font-bold text-gray-900 tracking-tight">WorkHere</span>
                         </div>
-                        
                         <div className="flex items-center gap-3">
                             <div className="bg-gray-100 p-1 rounded-lg flex text-sm font-medium">
                                 <button onClick={() => setView('explore')} className={`px-4 py-1.5 rounded-md transition-all ${view === 'explore' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Explore</button>
                                 <button onClick={() => setView('invitations')} className={`px-4 py-1.5 rounded-md transition-all ${view === 'invitations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Invites</button>
                             </div>
-                            
                             <button onClick={() => setShowProfile(true)} className="ml-2 relative">
-                                <img src={CURRENT_USER.avatar} className="w-10 h-10 rounded-full border-2 border-gray-100 hover:border-amber-400 transition-colors cursor-pointer" />
+                                <img src={userProfile.avatar} className="w-10 h-10 rounded-full border-2 border-gray-100 hover:border-amber-400 transition-colors object-cover bg-gray-200" />
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                             </button>
                         </div>
                     </nav>
 
-                    {/* Main Content */}
                     <main className="max-w-6xl w-full mx-auto px-4 py-8 flex-1">
                         {view === 'explore' ? (
                             <div className="animate-pop-in">
-                                {/* Hero Section */}
                                 <div className="mb-8">
                                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Find your focus zone 🎯</h1>
                                     <p className="text-gray-500">Real-time availability for study spots around De Anza.</p>
                                 </div>
 
-                                {/* Filter Bar */}
-                                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-8">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Filters:</span>
-                                        
-                                        <button 
-                                            onClick={() => setFilters(f => ({...f, wifi: !f.wifi}))}
-                                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.wifi ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            <Wifi className="w-4 h-4" /> Strong WiFi (4★+)
-                                        </button>
-
-                                        <button 
-                                            onClick={() => setFilters(f => ({...f, outlets: !f.outlets}))}
-                                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.outlets ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            <Zap className="w-4 h-4" /> Power Available
-                                        </button>
-
-                                        <button 
-                                            onClick={() => setFilters(f => ({...f, quiet: !f.quiet}))}
-                                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.quiet ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            <Volume2 className="w-4 h-4" /> Quiet Zone
-                                        </button>
-
-                                        <button 
-                                            onClick={() => setFilters(f => ({...f, longSession: !f.longSession}))}
-                                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.longSession ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                                        >
-                                            <Clock className="w-4 h-4" /> Closing in 5+ Hours
-                                        </button>
+                                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-8 overflow-x-auto">
+                                    <div className="flex items-center gap-3 min-w-max">
+                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Filters:</span>
+                                        <button onClick={() => setFilters(f => ({...f, wifi: !f.wifi}))} className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.wifi ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}><Wifi className="w-4 h-4" /> Strong WiFi</button>
+                                        <button onClick={() => setFilters(f => ({...f, outlets: !f.outlets}))} className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.outlets ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}><Zap className="w-4 h-4" /> Power</button>
+                                        <button onClick={() => setFilters(f => ({...f, quiet: !f.quiet}))} className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.quiet ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}><Volume2 className="w-4 h-4" /> Quiet</button>
+                                        <button onClick={() => setFilters(f => ({...f, longSession: !f.longSession}))} className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all flex items-center gap-2 ${filters.longSession ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}><Clock className="w-4 h-4" /> 5+ Hours</button>
                                     </div>
                                 </div>
 
-                                {/* Results Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {visibleLocations.map(loc => (
-                                        <div key={loc.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all group relative">
-                                            {/* Image Header */}
+                                        <div key={loc.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all group relative">
                                             <div className="h-48 overflow-hidden relative">
                                                 <img src={loc.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                                
-                                                {/* Top Left: Distance */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                                                 <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-md text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
                                                     <MapPin className="w-3 h-3" /> {loc.distance}
                                                 </div>
-
-                                                {/* Bottom: Basic Info */}
-                                                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
-                                                    <div>
-                                                        <h3 className="text-white font-bold text-lg leading-tight shadow-black drop-shadow-md">{loc.name}</h3>
-                                                        <p className="text-white/80 text-xs">{loc.address}</p>
+                                                <div className="absolute bottom-3 left-3 right-3">
+                                                    <h3 className="text-white font-bold text-lg leading-tight shadow-black drop-shadow-md">{loc.name}</h3>
+                                                    <div className="flex items-center gap-2 text-white/90 text-xs mt-1">
+                                                        <Clock className="w-3 h-3" /> {loc.hours}
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Details Body */}
                                             <div className="p-4 space-y-3">
-                                                
-                                                {/* Row 1: Status & Hours */}
                                                 <div className="flex justify-between items-center pb-3 border-b border-gray-100">
                                                     <div className="flex items-center gap-1.5 text-green-600 font-bold text-sm">
                                                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -384,14 +476,11 @@
                                                     </div>
                                                 </div>
 
-                                                {/* Row 2: Stats Grid */}
                                                 <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-gray-500 flex items-center gap-1"><Wifi className="w-3 h-3"/> WiFi</span>
                                                         <div className="flex text-amber-400 text-xs">
-                                                            {[...Array(5)].map((_, i) => (
-                                                                <span key={i} className={i < loc.wifiStars ? "text-amber-400" : "text-gray-200"}>★</span>
-                                                            ))}
+                                                            {[...Array(5)].map((_, i) => (<span key={i} className={i < loc.wifiStars ? "text-amber-400" : "text-gray-200"}>★</span>))}
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center justify-between">
@@ -412,8 +501,7 @@
                                                     </div>
                                                 </div>
 
-                                                {/* Action Button */}
-                                                <button className="w-full mt-2 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm">
+                                                <button onClick={() => openInviteModal(loc)} className="w-full mt-2 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm shadow-md">
                                                     <Send className="w-4 h-4" /> Invite Friends Here
                                                 </button>
                                             </div>
@@ -430,7 +518,6 @@
                                 )}
                             </div>
                         ) : (
-                            /* Invitations View */
                             <div className="max-w-2xl mx-auto animate-pop-in">
                                 <h2 className="text-2xl font-bold mb-6">Your Invitations</h2>
                                 <div className="bg-white rounded-xl p-8 text-center border border-dashed border-gray-300">
